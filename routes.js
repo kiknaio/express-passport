@@ -1,9 +1,11 @@
 const express = require('express');
 const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
 
 const User = require('./model/user');
 
 var router = express.Router();
+
 
 router.use((req, res, next) => {
   res.locals.currentUser = req.user;
@@ -21,15 +23,26 @@ router.get('/', (req, res, next) => {
     });
 });
 
+router.get('/users/:username', function(req ,res) {
+  User.findOne({
+    username: req.params.username,
+  }, function(err, user) {
+    if(err) { return next(err); }
+    if(!user) { return next(404); }
+    res.render('profile', { user:user })
+  });
+});
+
 router.get('/signup', (req ,res) => {
   res.render('signup');
 });
+
 
 router.post('/signup', (req, res, next) => {
   var username = req.body.username;
   var password = req.body.password;
 
-  User.findOne({ username: username }, (err, user) => {
+  User.findOne({ username: username }, function(err, user) {
     if(err) { return next(err); }
     if(user) {
       req.flash('error', 'User already exists');
@@ -47,5 +60,6 @@ router.post('/signup', (req, res, next) => {
   failureRedirect: '/signup',
   failureFlash: true
 }));
+
 
 module.exports = router;
