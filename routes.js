@@ -6,6 +6,15 @@ const User = require('./model/user');
 
 var router = express.Router();
 
+// Ensure is user is authenticated
+function ensureAuthenticated(req, res, next) {
+  if(req.isAuthenticated()) {
+    next();
+  } else {
+    req.flash('info', 'You must be logged in to see this page.');
+    red.redirect('/login');
+  }
+}
 
 router.use((req, res, next) => {
   res.locals.currentUser = req.user;
@@ -21,6 +30,32 @@ router.get('/', (req, res, next) => {
       if(err) { return next(err); }
       res.render('index', { users: users});
     });
+});
+
+router.get('/edit', ensureAuthenticated, function(req, res) {
+  res.render('edit');
+});
+
+router.post('/edit', ensureAuthenticated, function(req, res, next) {
+  req.user.displayName = req.body.displayname;
+  req.user.bio = req.body.bio;
+  req.user.save(function(err) {
+    if(err) {
+      next(err);
+      return;
+    }
+    req.flash('info', 'Profile updated!');
+    res.redirect('/edit');
+  });
+});
+
+router.get('/login', function(req, res) {
+  res.render('login');
+});
+
+router.get('/logout', function(req, res) {
+  req.logout();
+  res.redirect('/');
 });
 
 router.get('/users/:username', function(req ,res) {
@@ -57,7 +92,7 @@ router.post('/signup', (req, res, next) => {
   });
 }, passport.authenticate('local', {
   successRedirect: '/',
-  failureRedirect: '/signup',
+  failureRedirect: '/login',
   failureFlash: true
 }));
 

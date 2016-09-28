@@ -6,9 +6,10 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const flash = require('connect-flash');
 const passport = require('passport');
-const LocalStrategy = require('passport-local');
+const LocalStrategy = require('passport-local').Strategy;
 const User = require('./model/user');
 
+const passportConfig = require('./passport-config');
 
 
 const routes = require('./routes');
@@ -27,18 +28,8 @@ passport.use(new LocalStrategy(
   }
 ));
 
-passport.serializeUser(function(user, cb) {
-  cb(null, user.id);
-});
-
-passport.deserializeUser(function(id, cb) {
-  db.users.findById(id, function (err, user) {
-    if (err) { return cb(err); }
-    cb(null, user);
-  });
-});
-
 mongoose.connect('mongodb://localhost:27017/test');
+passportConfig();
 
 app.set('port', process.env.PORT || 3000);
 
@@ -50,7 +41,7 @@ app.use(cookieParser());
 app.use(session({
   secret: 'myfirstexpressappwithpassport',
   resave: true,
-  saveUninitialized: false
+  saveUninitialized: true
 }));
 app.use(flash());
 
